@@ -14,12 +14,12 @@ let s:del_py_path = expand('<sfile>:p:h') . '/../script/delete.py'
 
 
 function! s:InitChatSession(session_id)
-    let l:cmd_init = python_e . ' ' . s:init_py_path . ' ' . a:session_id . ' &'
+    let l:cmd_init = s:python_e . ' ' . s:init_py_path . ' ' . a:session_id . ' &'
     call system(l:cmd_init)
 endfunction
 
 function! ListChatSession()
-    let l:cmd_list = python_e . ' ' . s:list_py_path . ' -i ' . s:chat_session
+    let l:cmd_list = s:python_e . ' ' . s:list_py_path . ' -i ' . s:chat_session
     execute 'terminal' l:cmd_list
 endfunction
 
@@ -30,7 +30,7 @@ function! RunDeepSeekChat()
         echo 'No text selected.'
         return
     endif
-    let l:cmd = python_e . ' ' . s:chat_py_path . ' -k ' . g:deepseek_api_key . ' -s ' . s:chat_session . ' ' . shellescape(l:info, 1)
+    let l:cmd = s:python_e . ' ' . s:chat_py_path . ' -k ' . g:deepseek_api_key . ' -s ' . s:chat_session . ' ' . shellescape(l:info, 1)
     silent! execute 'terminal' l:cmd
     wincmd K
     wincmd w
@@ -75,7 +75,7 @@ function! DelChatSession(session_id_tmp = '-1', silent = 0)
         return
     else
         call remove(s:chat_session_list, l:session_index)
-        let l:cmd_del = python_e . ' ' . s:del_py_path . ' ' . l:session_id
+        let l:cmd_del = s:python_e . ' ' . s:del_py_path . ' ' . l:session_id
         call system(l:cmd_del)
         if a:silent == 0
             echo "delete session: " . l:session_id
@@ -98,7 +98,7 @@ function! s:Init()
     let s:chat_session = '0'
     let s:chat_session_list = []
     call s:InitChatSession(s:chat_session)
-    let l:cmd_list0 = python_e . ' ' . s:list_py_path . ' -m 0'
+    let l:cmd_list0 = s:python_e . ' ' . s:list_py_path . ' -m 0'
     let l:exist_sessions = system(cmd_list0)
     if v:shell_error != 0
         echoerr "vim-deepseek init failed"

@@ -16,7 +16,7 @@ function! RunDeepSeekAsk()
         echo 'No text selected.'
         return
     endif
-    let l:cmd = python_e . ' ' . s:ask_py_path . ' -k ' . g:deepseek_api_key . ' ' . shellescape(l:info, 1)
+    let l:cmd = s:python_e . ' ' . s:ask_py_path . ' -k ' . g:deepseek_api_key . ' ' . shellescape(l:info, 1)
     silent! execute 'terminal' l:cmd
     wincmd K
     wincmd w
