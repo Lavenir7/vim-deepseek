@@ -75,14 +75,14 @@ def saveChat(chat_name: str, chat_mark: str = ''):
     return 1
 
 def showTokens(usage):
-    print("\n\n"+"="*10)
+    print("\n\n"+"-"*3+"\n")
     print(f"- total tokens : {usage.total_tokens} ({usage.completion_tokens} + {usage.prompt_tokens})")
     print(f"- prompt tokens (hit+miss) : {usage.prompt_tokens} ({usage.prompt_cache_hit_tokens} + {usage.prompt_cache_miss_tokens})")
     if usage.completion_tokens_details:
         print(f"completion tokens details: {usage.completion_tokens_details}")
     if usage.prompt_tokens_details:
         print(f"prompt tokens details: {usage.prompt_tokens_details}")
-    print("="*10+"\n")
+    print("\n"+"-"*3+"\n")
 
 
 fmt = lambda role, content: {"role": role, "content": content}
