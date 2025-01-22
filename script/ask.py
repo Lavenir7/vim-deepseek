@@ -1,16 +1,19 @@
 #!/usr/bin/python
 from openai import OpenAI
 from argparse import ArgumentParser
+import json
 import os
 
 # CONSTANTS
 SCIPT_PATH = os.path.dirname(__file__)
 PROMPT_PATH = SCIPT_PATH+"/../assets/prompts/"
+with open(SCIPT_PATH+"/config.json", 'r', encoding = "utf-8") as rf:
+    deepseek = json.load(rf)
 
 def myWarning(info: str):
     print(f"\033[93mWarning: {info}\033[0m")
 
-parser = ArgumentParser(description="DeepSeekV3")
+parser = ArgumentParser(description=f"{deepseek['model']['name']}")
 
 parser.add_argument("inputs", type=str, default="", help="输入")
 parser.add_argument("-k", "--apikey", type = str, default = "", help = "apikey")
@@ -31,7 +34,7 @@ else:
     myWarning(f"系统提示内容不存在 : {args.prompt}")
     system_prompt = ""
 
-client = OpenAI(api_key=apiKey, base_url="https://api.deepseek.com")
+client = OpenAI(api_key=apiKey, base_url=deepseek["api_url"])
 
 def showTokens(usage):
     print("\n\n"+"="*10)
@@ -44,7 +47,7 @@ def showTokens(usage):
     print("="*10+"\n")
 
 response = client.chat.completions.create(
-    model="deepseek-chat",
+    model=deepseek["model"]["api_use"],
     messages=[
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": inputs},
@@ -53,6 +56,6 @@ response = client.chat.completions.create(
 )
 
 for res in response:
-    print(res.choices[0].delta.content, end = '', flush = True)
+    print(res.choices[0].message.content, end = '', flush = True)
 showTokens(res.usage)
 

@@ -3,6 +3,7 @@ from openai import OpenAI
 from argparse import ArgumentParser
 from yaml import dump, safe_load
 from datetime import datetime
+import json
 import os
 
 # CONSTANTS
@@ -10,8 +11,10 @@ SCIPT_PATH = os.path.dirname(__file__)
 CHATS_PATH = SCIPT_PATH+"/../assets/chats/"
 CHAT_LIST_PATH = CHATS_PATH+".list.yml"
 PROMPT_PATH = SCIPT_PATH+"/../assets/prompts/"
+with open(SCIPT_PATH+"/config.json", 'r', encoding = "utf-8") as rf:
+    deepseek = json.load(rf)
 # params
-parser = ArgumentParser(description = "DeepSeek-V3 chat")
+parser = ArgumentParser(description = f"{deepseek['model']['name']} chat")
 parser.add_argument("inputs", type=str, default="", help="输入")
 parser.add_argument("-k", "--apikey", type = str, default = "", help = "apikey")
 parser.add_argument("-p", "--prompt", type = str, default = "assistant", help = "系统提示内容文件名")
@@ -87,8 +90,7 @@ def showTokens(usage):
 
 fmt = lambda role, content: {"role": role, "content": content}
 
-deepseek_api_url = "https://api.deepseek.com"
-client = OpenAI(api_key = apiKey, base_url = deepseek_api_url)
+client = OpenAI(api_key = apiKey, base_url = deepseek["api_url"])
 messages = [fmt("system", system_prompt)]
 
 if __name__ == "__main__":
@@ -96,14 +98,23 @@ if __name__ == "__main__":
     loadChat(f"chat_{session_id}")
     messages.append(fmt("user", msg))
     response = client.chat.completions.create(
-        model = "deepseek-chat",
+        model = deepseek["model"]["api_use"],
         messages = messages,
         stream = True
     )
+    response_reason_contents = ""
     response_contents = ""
+    isreason = True if deepseek["model"]["name"] == "DeepSeek-R1" else False
     for res in response:
-        res_content = res.choices[0].delta.content
-        response_contents += res_content
+        if isreason:
+            res_reason_content = res.choices[0].message.reasoning_content
+        else:
+            res_content = res.choices[0].message.content
+        # change here
+        if res_reason_content:
+            response_reason_contents += res_reason_content
+        if res_content:
+            response_contents += res_content
         print(res_content, end = '', flush = True)
     messages.append(fmt("assistant", response_contents))
     showTokens(res.usage)
