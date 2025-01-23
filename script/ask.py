@@ -13,10 +13,10 @@ with open(SCIPT_PATH+"/config.json", 'r', encoding = "utf-8") as rf:
 def myWarning(info: str):
     print(f"\033[93mWarning: {info}\033[0m")
 
-parser = ArgumentParser(description=f"{deepseek['model']['name']}")
-
-parser.add_argument("inputs", type=str, default="", help="输入")
+parser = ArgumentParser(description = "vim-deepseek ask")
+parser.add_argument("inputs", type = str, default="", help = "输入")
 parser.add_argument("-k", "--apikey", type = str, default = "", help = "apikey")
+parser.add_argument("-m", "--model", type = str, default = deepseek["model_default"], help = "模型 (dsV3 / dsR1)")
 parser.add_argument("-p", "--prompt", type = str, default = "assistant", help = "系统提示内容文件名")
 
 args = parser.parse_args()
@@ -24,6 +24,7 @@ inputs = args.inputs
 if not inputs:
     raise SystemExit
 
+model_select = args.model
 apiKey = args.apikey
 for prompt_path_i in (args.prompt, PROMPT_PATH+args.prompt):
     if os.path.exists(prompt_path_i) and os.path.isfile(prompt_path_i):
@@ -33,8 +34,6 @@ for prompt_path_i in (args.prompt, PROMPT_PATH+args.prompt):
 else:
     myWarning(f"系统提示内容不存在 : {args.prompt}")
     system_prompt = ""
-
-client = OpenAI(api_key=apiKey, base_url=deepseek["api_url"])
 
 def showTokens(usage):
     print("\n\n"+"="*10)
@@ -46,16 +45,37 @@ def showTokens(usage):
         print(f"prompt tokens details: {usage.prompt_tokens_details}")
     print("="*10+"\n")
 
-response = client.chat.completions.create(
-    model=deepseek["model"]["api_use"],
-    messages=[
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": inputs},
-    ],
-    stream=True
-)
+client = OpenAI(api_key = apiKey, base_url = deepseek["api_url"])
 
-for res in response:
-    print(res.choices[0].message.content, end = '', flush = True)
-showTokens(res.usage)
+if __name__ == "__main__":
+    response = client.chat.completions.create(
+        model = deepseek["models"][model_select],
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": inputs},
+        ],
+        stream=True
+    )
+
+    have_reason = False
+    start_reason = True
+    for res in response:
+        try:
+            res_reason_content = res.choices[0].delta.reasoning_content
+            if res_reason_content:
+                have_reason = True
+                if start_reason:
+                    print("=== THINK START ===\n")
+                    start_reason = False
+                response_reason_contents += res_reason_content
+                print(res_reason_content, end = '', flush = True)
+        except:
+            have_reason = False
+        res_content = res.choices[0].delta.content
+        if res_content:
+            if have_reason:
+                print("\n\n=== THINK END ===\n\n")
+                have_reason = False
+            print(res_content, end = '', flush = True)
+    showTokens(res.usage)
 

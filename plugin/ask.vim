@@ -13,10 +13,12 @@ function! RunDeepSeekAsk()
     let l:info = getcontent#GetContent()
     normal! v
     if l:info == ''
-        echo 'No text selected.'
+        echohl ErrorMsg
+        echo '[vim-deepseek] No text selected.'
+        echohl None
         return
     endif
-    let l:cmd = s:python_e . ' ' . s:ask_py_path . ' -k ' . g:deepseek_api_key . ' ' . shellescape(l:info, 1)
+    let l:cmd = s:python_e . ' ' . s:ask_py_path . ' -k ' . g:deepseek_api_key . ' -m ' . g:deepseek_model . ' ' . shellescape(l:info, 1)
     silent! execute 'terminal' l:cmd
     wincmd K
     wincmd w

@@ -27,32 +27,42 @@ function! RunDeepSeekChat()
     let l:info = getcontent#GetContent()
     normal! v
     if l:info == ''
-        echo 'No text selected.'
+        echohl ErrorMsg
+        echo '[vim-deepseek] No text selected.'
+        echohl None
         return
     endif
-    let l:cmd = s:python_e . ' ' . s:chat_py_path . ' -k ' . g:deepseek_api_key . ' -s ' . s:chat_session . ' ' . shellescape(l:info, 1)
+    let l:cmd = s:python_e . ' ' . s:chat_py_path . ' -k ' . g:deepseek_api_key . ' -m ' . g:deepseek_model . ' -s ' . s:chat_session . ' ' . shellescape(l:info, 1)
     silent! execute 'terminal' l:cmd
     wincmd K
     wincmd w
 endfunction
 
 function! SetChatSession()
+    echohl MoreMsg
     let l:select_session = input("Please enter a session id: ")
+    echohl None
     if l:select_session =~ '^\d\+$'
         let s:chat_session = l:select_session
         if index(s:chat_session_list, s:chat_session) == -1
             call add(s:chat_session_list, s:chat_session)
             call s:InitChatSession(s:chat_session)
-            echo " | new session: " . s:chat_session
+            echohl ModeMsg
+            echo "\nnew session: " . s:chat_session
+            echohl None
         else
             " move to the tail
             let l:chat_session_index = index(s:chat_session_list, s:chat_session)
             call remove(s:chat_session_list, l:chat_session_index)
             call add(s:chat_session_list, s:chat_session)
-            echo " | set session: " . s:chat_session
+            echohl ModeMsg
+            echo "\nset session: " . s:chat_session
+            echohl None
         endif
     else
-        echo "Warning: should enter a session id"
+        echohl ErrorMsg
+        echo "\nshould enter a session id"
+        echohl None
     endif
 endfunction
 
@@ -65,12 +75,16 @@ function! DelChatSession(session_id_tmp = '-1', silent = 0)
     let l:session_index = index(s:chat_session_list, l:session_id)
     if len(s:chat_session_list) == 1
         if a:silent == 0
+            echohl ErrorMsg
             echo "Can't delete: only one session ( " . s:chat_session_list[0] . " )"
+            echohl None
         endif
         return
     elseif l:session_index == -1
         if a:silent == 0
+            echohl ErrorMsg
             echo "Doesn't exist session: " . l:session_id
+            echohl None
         endif
         return
     else
@@ -78,7 +92,9 @@ function! DelChatSession(session_id_tmp = '-1', silent = 0)
         let l:cmd_del = s:python_e . ' ' . s:del_py_path . ' ' . l:session_id
         call system(l:cmd_del)
         if a:silent == 0
+            echohl WarningMsg
             echo "delete session: " . l:session_id
+            echohl None
         endif
         if s:chat_session == l:session_id
             let s:chat_session = s:chat_session_list[-1]
@@ -90,7 +106,9 @@ function! CleanChatSession()
     for exist_session in s:chat_session_list
         call DelChatSession(exist_session, 1)
     endfor
-    echo "The session list has been cleaned, except " . s:chat_session
+    echohl WarningMsg
+    echo "The session list has been cleaned, except [" . s:chat_session . "]"
+    echohl None
 endfunction
 
 
@@ -101,7 +119,7 @@ function! s:Init()
     let l:cmd_list0 = s:python_e . ' ' . s:list_py_path . ' -m 0'
     let l:exist_sessions = system(cmd_list0)
     if v:shell_error != 0
-        echoerr "vim-deepseek init failed"
+        echoerr "[vim-deepseek] init script failed"
         return
     endif
     let l:exist_session_list = split(l:exist_sessions, '\s\+')

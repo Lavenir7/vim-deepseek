@@ -1,13 +1,9 @@
 {
     "api_url" : "https://api.deepseek.com",
-    "model" :
+    "models" :
     {
-        "name" : "DeepSeek-V3",
-        "api_use" : "deepseek-chat"
+        "dsV3" : "deepseek-chat",
+        "dsR1" : "deepseek-reasoner"
     },
-    "model" :
-    {
-        "name" : "DeepSeek-R1",
-        "api_use" : "deepseek-reasoner"
-    }
+    "model_default" : "dsV3"
 }

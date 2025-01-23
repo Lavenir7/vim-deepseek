@@ -14,9 +14,10 @@ PROMPT_PATH = SCIPT_PATH+"/../assets/prompts/"
 with open(SCIPT_PATH+"/config.json", 'r', encoding = "utf-8") as rf:
     deepseek = json.load(rf)
 # params
-parser = ArgumentParser(description = f"{deepseek['model']['name']} chat")
-parser.add_argument("inputs", type=str, default="", help="输入")
+parser = ArgumentParser(description = "vim-deepseek chat")
+parser.add_argument("inputs", type = str, default="", help = "输入")
 parser.add_argument("-k", "--apikey", type = str, default = "", help = "apikey")
+parser.add_argument("-m", "--model", type = str, default = deepseek["model_default"], help = "模型 (dsV3 / dsR1)")
 parser.add_argument("-p", "--prompt", type = str, default = "assistant", help = "系统提示内容文件名")
 parser.add_argument("-s", "--session", type = str, default = "0", help = "会话编号")
 args = parser.parse_args()
@@ -24,6 +25,7 @@ args = parser.parse_args()
 def myWarning(info: str):
     print(f"\033[93mWarning: {info}\033[0m")
 
+model_select = args.model
 apiKey = args.apikey
 for prompt_path_i in (args.prompt, PROMPT_PATH+args.prompt):
     if os.path.exists(prompt_path_i) and os.path.isfile(prompt_path_i):
@@ -98,24 +100,33 @@ if __name__ == "__main__":
     loadChat(f"chat_{session_id}")
     messages.append(fmt("user", msg))
     response = client.chat.completions.create(
-        model = deepseek["model"]["api_use"],
+        model = deepseek["models"][model_select],
         messages = messages,
         stream = True
     )
     response_reason_contents = ""
     response_contents = ""
-    isreason = True if deepseek["model"]["name"] == "DeepSeek-R1" else False
+    have_reason = False
+    start_reason = True
     for res in response:
-        if isreason:
-            res_reason_content = res.choices[0].message.reasoning_content
-        else:
-            res_content = res.choices[0].message.content
-        # change here
-        if res_reason_content:
-            response_reason_contents += res_reason_content
+        try:
+            res_reason_content = res.choices[0].delta.reasoning_content
+            if res_reason_content:
+                have_reason = True
+                if start_reason:
+                    print("=== THINK START ===\n")
+                    start_reason = False
+                response_reason_contents += res_reason_content
+                print(res_reason_content, end = '', flush = True)
+        except:
+            have_reason = False
+        res_content = res.choices[0].delta.content
         if res_content:
+            if have_reason:
+                print("\n\n=== THINK END ===\n\n")
+                have_reason = False
             response_contents += res_content
-        print(res_content, end = '', flush = True)
+            print(res_content, end = '', flush = True)
     messages.append(fmt("assistant", response_contents))
     showTokens(res.usage)
     saveChat(f"chat_{session_id}")
